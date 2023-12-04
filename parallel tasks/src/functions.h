@@ -5,9 +5,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "esp_spiffs.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int tamanoLista) {
+#include "esp_spiffs.h"
+#include "esp_system.h"
+#include "nvs_flash.h"
+
+//#define FILE_PATH "/spiffs/data.txt"
+
+void initialize_spiffs() {
     esp_vfs_spiffs_conf_t conf = {
         .base_path = "/spiffs",
         .partition_label = NULL,
@@ -18,9 +25,52 @@ float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int tamanoL
     esp_err_t ret = esp_vfs_spiffs_register(&conf);
     if (ret != ESP_OK) {
         printf("Error al montar SPIFFS (%d)\n", ret);
-        return NULL;
+        return;
+    }
+}
+
+void crear_Archivo(const char *nombreArchivo) {
+    
+    // Intentar abrir el archivo
+    FILE *file = fopen(nombreArchivo, "r");
+    if (file != NULL) {
+        // El archivo existe, cerrarlo y eliminarlo
+        fclose(file);
+        if (remove(nombreArchivo) == 0) {
+            printf("Archivo existente eliminado: %s\n", nombreArchivo);
+        } else {
+            printf("Error al eliminar el archivo existente: %s\n", nombreArchivo);
+        }
+    } else {
+        printf("El archivo no existe\n");
     }
 
+    // Crear el archivo
+    file = fopen(nombreArchivo, "w");
+    if (file == NULL) {
+        printf("Error al crear el archivo\n");
+        return;
+    }
+
+    fclose(file);
+
+}
+
+void write_data_to_file(const char* nombreArchivo, float valor) {
+    FILE *file = fopen(nombreArchivo, "w");
+    if (file == NULL) {
+        printf("Error al abrir el archivo para escritura\n");
+        return;
+    }
+
+    fprintf(file, "%f", valor);
+    //fprintf(file, "%s", data);
+    //printf("Almacenado\n");
+    fclose(file);
+}
+
+float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int tamanoLista) {
+    printf("Abriendo el archivo\n");
     FILE* archivo = fopen(nombreArchivo, "r");
 
     if (archivo == NULL) {
@@ -36,16 +86,18 @@ float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int tamanoL
     }
 
     int i = 0;
-    int contadorLineas = 0;
-
+    int contadorLineas = 0; 
     char linea[256]; // Número de caracteres que desea leer de cada linea, Ajusta el tamaño según tus necesidades
+    
     while (fgets(linea, sizeof(linea), archivo) != NULL && i < tamanoLista) {
         if (contadorLineas >= lineaInicio) {
+
             if (strcmp(linea, "nan\n") == 0) {
                 lista[i] = NAN;  // Representación de NaN en C
             } else {
                 sscanf(linea, "%f", &lista[i]);
             }
+
             i++;
         }
         contadorLineas++;

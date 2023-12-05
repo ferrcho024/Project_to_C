@@ -104,7 +104,34 @@ Por ahora, como somosm mazoquistas, vamos a intentar trabajar sin WSL tratando d
 
 Hasta aqui vamos en orden...
 
-   
+* BUILD viejo: https://github.com/tensorflow/tensorflow/blob/be4f6874533d78f662d9777b66abe3cdde98f901/tensorflow/lite/experimental/micro/examples/hello_world/BUILD
+* BUILD actual: https://github.com/tensorflow/tflite-micro/blob/main/tensorflow/lite/micro/examples/hello_world/BUILD
 
-   
+### Otro intento *
 
+Usemos el del libro a ver que pasa: https://github.com/tensorflow/tensorflow/tree/be4f6874533d78f662d9777b66abe3cdde98f901
+
+
+```
+git clone --depth 1 https://github.com/tensorflow/tensorflow.git
+cd tensorflow/
+make -f /tensorflow/lite/experimental/micro/tools/make/Makefile test_hello_world_test
+```
+
+### Otro intento **
+
+Descargar mejor el zip, pues cuando se hace el git clone muchos de los archivos que aparecen en el repo viejo no se copian localmente, en cambio cuando se hace la descarga del comprimido todo si va:
+   
+```
+cd tensorflow/
+make -f tensorflow/lite/experimental/micro/tools/make/Makefile test_hello_world_test
+```
+
+Salio lo siguiente:
+
+![viejo3](viejo3.png)
+
+  
+```
+make -f tensorflow/lite/experimental/micro/tools/make/Makefile hello_world   
+```

@@ -3,27 +3,31 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-int tamanoLista = 60;  // Tamaño de la lista que almacena los datos
-int lineaInicio = 0; // Inicializa la lectura desde la línea 0
+int tamanoLista;  // Tamaño de la lista que almacena los datos
+int lineaInicio; // Inicializa la lectura desde la línea 0
 bool ban = true;
 
 void tarea1(void *parameter) {
 
   while(ban){
+
+    tamanoLista = 60;
+    lineaInicio = 0;
     
-    float* miLista = leerArchivoSPIFFS("/spiffs/datos.txt", lineaInicio, tamanoLista);
+    float* miLista = leerArchivoSPIFFS("/spiffs/datos.txt", lineaInicio, &tamanoLista);
     lineaInicio = lineaInicio + tamanoLista; // Aumenta la el número de la línea para la siguiente iteracción
     //Serial.println(lineaInicio);
 
 
     if (miLista != NULL) {
-          size_t tamanoLista = sizeof(miLista);// / sizeof(miLista[0]);
-          printf("Tamaño de la lista:%d\n", tamanoLista);
+          printf("Tamaño de la lista: %d\n", tamanoLista);
           printf("Lista de valores:\n");
           for (int i = 0; i < tamanoLista; i++) {
               printf("%.5f\n", miLista[i]);
-              //write_data_to_file("/spiffs/data.txt", miLista[i]);
-              //delay(500);
+              //printf("%d\n", i);
+              // Obtener la fecha y hora actual
+              write_data_to_file("/spiffs/data.txt", miLista[i]);
+              delay(200);
           }
 
           // Liberar memoria después de su uso
@@ -39,9 +43,15 @@ void tarea1(void *parameter) {
   ban = true;
 
   while(ban){
+
+
+    read_data_from_file("/spiffs/data.txt");
+
+    tamanoLista = 60;
+    lineaInicio = 0;
     
-    float* miLista = leerArchivoSPIFFS("/spiffs/data.txt", lineaInicio, tamanoLista);
-    lineaInicio = lineaInicio + tamanoLista; // Aumenta la el número de la línea para la siguiente iteracción
+    float* miLista = leerArchivoSPIFFS("/spiffs/data.txt", lineaInicio, &tamanoLista);
+    lineaInicio = lineaInicio + tamanoLista; // Aumenta el número de la línea para la siguiente iteracción
     //Serial.println(lineaInicio);
 
 

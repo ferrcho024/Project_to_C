@@ -1,5 +1,6 @@
 #include <FS.h>
 #include <SPIFFS.h>
+#include <time.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,16 @@
 #include "nvs_flash.h"
 
 //#define FILE_PATH "/spiffs/data.txt"
+
+struct tm get_current_time() {
+    time_t now;
+    struct tm timeinfo;
+
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    return timeinfo;
+}
 
 void initialize_spiffs() {
     esp_vfs_spiffs_conf_t conf = {
@@ -57,19 +68,24 @@ void crear_Archivo(const char *nombreArchivo) {
 }
 
 void write_data_to_file(const char* nombreArchivo, float valor) {
-    FILE *file = fopen(nombreArchivo, "w");
+    FILE *file = fopen(nombreArchivo, "a");
     if (file == NULL) {
         printf("Error al abrir el archivo para escritura\n");
         return;
     }
 
-    fprintf(file, "%f", valor);
+    // Obtener la fecha y hora actual
+    struct tm timeinfo = get_current_time();
+
+    fprintf(file, "[%04d-%02d-%02d %02d:%02d:%02d] %.5f\n",
+                timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
+                timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, valor);
     //fprintf(file, "%s", data);
     //printf("Almacenado\n");
     fclose(file);
 }
 
-float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int tamanoLista) {
+float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int *tamanoLista) {
     printf("Abriendo el archivo\n");
     FILE* archivo = fopen(nombreArchivo, "r");
 
@@ -78,7 +94,7 @@ float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int tamanoL
         return NULL;
     }
 
-    float* lista = (float*)malloc(tamanoLista * sizeof(float));
+    float* lista = (float*)malloc(*tamanoLista * sizeof(float));
     if (lista == NULL) {
         perror("Error al asignar memoria para la lista");
         fclose(archivo);
@@ -89,7 +105,7 @@ float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int tamanoL
     int contadorLineas = 0; 
     char linea[256]; // Número de caracteres que desea leer de cada linea, Ajusta el tamaño según tus necesidades
     
-    while (fgets(linea, sizeof(linea), archivo) != NULL && i < tamanoLista) {
+    while (fgets(linea, sizeof(linea), archivo) != NULL && i < *tamanoLista) {
         if (contadorLineas >= lineaInicio) {
 
             if (strcmp(linea, "nan\n") == 0) {
@@ -103,11 +119,73 @@ float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int tamanoL
         contadorLineas++;
     }
 
+    *tamanoLista = contadorLineas;
+    printf("El tamano de la lista es %d\n", *tamanoLista);
     fclose(archivo);
     //*tamanoLista = i;
 
     return lista;
 }
+
+struct DataEntry {
+    struct tm timeinfo;
+    float value;
+};
+
+// Función para convertir una cadena de fecha y hora a una estructura tm
+int parse_date_time(const char *str, struct tm *timeinfo) {
+    return sscanf(str, "[%d-%d-%d %d:%d:%d]", 
+                  &timeinfo->tm_year, &timeinfo->tm_mon, &timeinfo->tm_mday,
+                  &timeinfo->tm_hour, &timeinfo->tm_min, &timeinfo->tm_sec);
+}
+
+// Función para leer el archivo y obtener los datos
+void read_data_from_file(const char *file_path) {
+    FILE *file = fopen(file_path, "r");
+    if (file == NULL) {
+        printf("Error al abrir el archivo para lectura\n");
+        return;
+    }
+
+    char line[256];
+    struct DataEntry entry;
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        // Parsear la línea para obtener fecha, hora y valor float
+        if (parse_date_time(line, &entry.timeinfo) == 6) {
+            char *value_str = strchr(line, ']');
+            if (value_str != NULL) {
+                value_str += 2;  // Apuntar al espacio después del ']'
+                sscanf(value_str, "%f", &entry.value);
+
+                // Obtener la fecha y hora actual
+                time_t current_time;
+                struct tm *current_timeinfo;
+
+                time(&current_time);
+                current_timeinfo = localtime(&current_time);
+
+                // Ajustar la estructura tm con la fecha y hora actual
+                entry.timeinfo.tm_year = current_timeinfo->tm_year;
+                entry.timeinfo.tm_mon = current_timeinfo->tm_mon;
+                entry.timeinfo.tm_mday = current_timeinfo->tm_mday;
+
+                // Hacer algo con la entrada, por ejemplo, imprimir en la consola
+                printf("Fecha: %04d-%02d-%02d %02d:%02d:%02d, Valor: %.5f\n",
+                       entry.timeinfo.tm_year + 1900, entry.timeinfo.tm_mon + 1, entry.timeinfo.tm_mday,
+                       entry.timeinfo.tm_hour, entry.timeinfo.tm_min, entry.timeinfo.tm_sec,
+                       entry.value);
+            } else {
+                printf("Error al extraer el valor float de la línea: %s\n", line);
+            }
+        } else {
+            printf("Error al parsear la línea: %s\n", line);
+        }
+    }
+
+    fclose(file);
+}
+
 
 #define MAX_SIZE 60
 

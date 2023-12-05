@@ -6,13 +6,14 @@
 int tamanoLista;  // Tamaño de la lista que almacena los datos
 int lineaInicio; // Inicializa la lectura desde la línea 0
 bool ban = true;
+int frec = 1000; // Espacio de tiempo entre los datos que llegan (en milisegundos)
 
 void tarea1(void *parameter) {
 
+  lineaInicio = 0;
   while(ban){
 
     tamanoLista = 60;
-    lineaInicio = 0;
     
     float* miLista = leerArchivoSPIFFS("/spiffs/datos.txt", lineaInicio, &tamanoLista);
     lineaInicio = lineaInicio + tamanoLista; // Aumenta la el número de la línea para la siguiente iteracción
@@ -20,14 +21,14 @@ void tarea1(void *parameter) {
 
 
     if (miLista != NULL) {
+          printf("\nLista de valores:\n");
           printf("Tamaño de la lista: %d\n", tamanoLista);
-          printf("Lista de valores:\n");
           for (int i = 0; i < tamanoLista; i++) {
               printf("%.5f\n", miLista[i]);
               //printf("%d\n", i);
               // Obtener la fecha y hora actual
               write_data_to_file("/spiffs/data.txt", miLista[i]);
-              delay(200);
+              delay(frec);
           }
 
           // Liberar memoria después de su uso
@@ -38,14 +39,15 @@ void tarea1(void *parameter) {
       Serial.println("**** Finalizó******");
       ban = false;
 
+      delay(frec);
+
+      ban = true;
+
   }
 
-  ban = true;
+  //ban = true;
 
   while(ban){
-
-
-    read_data_from_file("/spiffs/data.txt");
 
     tamanoLista = 60;
     lineaInicio = 0;
@@ -78,8 +80,17 @@ void tarea1(void *parameter) {
 
 void tarea2(void *parameter) {
   while (true) {
-    //Serial.println("Tarea 2 ejecutándose en el núcleo 1");
-    delay(2000);
+    //printf("Tarea 2 ejecutándose en el núcleo 1 %d\n", ban);
+    delay(frec);
+    if (!ban){
+      float* datos = leerArchivoSPIFFS("/spiffs/temp.txt", 0, &tamanoLista); // Lee el archivo solo con valores
+      float p_com = completitud(datos, tamanoLista);
+      printf("**********Porcentaje completitud: %.5f\n", p_com);
+      //read_data_from_file("/spiffs/data.txt"); // Lee el archivo con formato de hora y valor float
+      crear_Archivo("/spiffs/temp.txt");
+      //Serial.println("Tarea 2 ejecutándose en el núcleo 1");
+      delay(frec);
+    }
   }
 }
 
@@ -96,7 +107,8 @@ void setup() {
   //wait_for_sntp();
 
   initialize_spiffs();
-  crear_Archivo("/spiffs/data.txt");
+  crear_Archivo("/spiffs/temp.txt"); // Archivo de memoria temporal
+  crear_Archivo("/spiffs/data.txt"); // Archivo de memoria permanente
   //write_data_to_file("/spiffs/data.txt", 11.11111);
 
   

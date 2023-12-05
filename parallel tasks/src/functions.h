@@ -12,17 +12,87 @@
 #include "esp_spiffs.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
+#include "esp_log.h"
+//#include "lwip/apps/sntp.h"
 
-//#define FILE_PATH "/spiffs/data.txt"
+#include "WiFi.h" // ESP32 WiFi include
+#include "esp_sntp.h"
+#include "WiFiConfig.h" // My WiFi configuration.
+
+void printTime(){
+  
+  struct tm time;
+   
+  if(!getLocalTime(&time)){
+    Serial.println("Could not obtain time info");
+    return;
+  }
+ 
+  Serial.println("\n---------TIME----------");
+  Serial.println(&time, "%A, %B %d %Y %H:%M:%S");
+  Serial.println("");
+   
+//   Serial.print("Number of years since 1900: ");
+//   Serial.println(time.tm_year);
+ 
+//   Serial.print("month, from 0 to 11: ");
+//   Serial.println(time.tm_mon);
+ 
+//   Serial.print("day, from 1 to 31: "); 
+//   Serial.println(time.tm_mday);
+ 
+//   Serial.print("hour, from 0 to 23: ");
+//   Serial.println(time.tm_hour);
+ 
+//   Serial.print("minute, from 0 to 59: ");
+//   Serial.println(time.tm_min);
+   
+//   Serial.print("second, from 0 to 59: ");
+//   Serial.println(time.tm_sec);
+
+}
+
+void ConnectToWiFi()
+{
+ 
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(SSID, WiFiPassword);
+  Serial.print("Connecting to "); Serial.println(SSID);
+ 
+  uint8_t i = 0;
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print('.');
+    delay(500);
+ 
+    if ((++i % 16) == 0)
+    {
+      Serial.println(F(" still trying to connect"));
+    }
+  }
+ 
+  Serial.print(F("Connected. My IP address is: "));
+  Serial.println(WiFi.localIP());
+
+  delay(2000);
+
+  // Configurar el servicio SNTP
+  configTime(-18000, 3600, ntpServer); // -18000 es para UTC -5 (-5*60*60)
+
+  printTime();
+  delay(2000);
+}
 
 struct tm get_current_time() {
-    time_t now;
-    struct tm timeinfo;
 
-    time(&now);
-    localtime_r(&now, &timeinfo);
+    struct tm time;
+   
+    if(!getLocalTime(&time)){
+        Serial.println("Could not obtain time info");
+        return time;
+    }
 
-    return timeinfo;
+    return time;
 }
 
 void initialize_spiffs() {
@@ -158,21 +228,9 @@ void read_data_from_file(const char *file_path) {
                 value_str += 2;  // Apuntar al espacio después del ']'
                 sscanf(value_str, "%f", &entry.value);
 
-                // Obtener la fecha y hora actual
-                time_t current_time;
-                struct tm *current_timeinfo;
-
-                time(&current_time);
-                current_timeinfo = localtime(&current_time);
-
-                // Ajustar la estructura tm con la fecha y hora actual
-                entry.timeinfo.tm_year = current_timeinfo->tm_year;
-                entry.timeinfo.tm_mon = current_timeinfo->tm_mon;
-                entry.timeinfo.tm_mday = current_timeinfo->tm_mday;
-
                 // Hacer algo con la entrada, por ejemplo, imprimir en la consola
                 printf("Fecha: %04d-%02d-%02d %02d:%02d:%02d, Valor: %.5f\n",
-                       entry.timeinfo.tm_year + 1900, entry.timeinfo.tm_mon + 1, entry.timeinfo.tm_mday,
+                       entry.timeinfo.tm_year, entry.timeinfo.tm_mon, entry.timeinfo.tm_mday,
                        entry.timeinfo.tm_hour, entry.timeinfo.tm_min, entry.timeinfo.tm_sec,
                        entry.value);
             } else {
@@ -185,6 +243,7 @@ void read_data_from_file(const char *file_path) {
 
     fclose(file);
 }
+
 
 
 #define MAX_SIZE 60

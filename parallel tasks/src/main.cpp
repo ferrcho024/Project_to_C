@@ -86,9 +86,18 @@ void tarea2(void *parameter) {
 void setup() {
   Serial.begin(115200);
 
+  // Configurar y conectar WiFi
+  ConnectToWiFi();
+  
+  // Inicializar SNTP
+  //initialize_sntp();
+
+  // Esperar hasta que SNTP obtenga la hora actual
+  //wait_for_sntp();
+
   initialize_spiffs();
   crear_Archivo("/spiffs/data.txt");
-  write_data_to_file("/spiffs/data.txt", 11.11111);
+  //write_data_to_file("/spiffs/data.txt", 11.11111);
 
   
 

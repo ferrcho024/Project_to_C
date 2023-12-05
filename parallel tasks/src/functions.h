@@ -74,13 +74,13 @@ void ConnectToWiFi()
   Serial.print(F("Connected. My IP address is: "));
   Serial.println(WiFi.localIP());
 
-  delay(2000);
+  delay(1000);
 
   // Configurar el servicio SNTP
   configTime(-18000, 3600, ntpServer); // -18000 es para UTC -5 (-5*60*60)
 
   printTime();
-  delay(2000);
+  delay(1000);
 }
 
 struct tm get_current_time() {
@@ -150,13 +150,23 @@ void write_data_to_file(const char* nombreArchivo, float valor) {
     fprintf(file, "[%04d-%02d-%02d %02d:%02d:%02d] %.5f\n",
                 timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
                 timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, valor);
-    //fprintf(file, "%s", data);
-    //printf("Almacenado\n");
+
     fclose(file);
+
+    // Almacenamiento en el archivo temporal. En este se guarda solo el dato sin fecha para facilidad en la extraccion de los datos para los cálculos
+    FILE *file2 = fopen("/spiffs/temp.txt", "a");
+    if (file2 == NULL) {
+        printf("Error al abrir el archivo para escritura\n");
+        return;
+    }
+
+    fprintf(file2, "%.5f\n", valor);
+
+    fclose(file2);
+
 }
 
 float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int *tamanoLista) {
-    printf("Abriendo el archivo\n");
     FILE* archivo = fopen(nombreArchivo, "r");
 
     if (archivo == NULL) {
@@ -189,8 +199,8 @@ float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int *tamano
         contadorLineas++;
     }
 
-    *tamanoLista = contadorLineas;
-    printf("El tamano de la lista es %d\n", *tamanoLista);
+    *tamanoLista = contadorLineas - lineaInicio;
+    
     fclose(archivo);
     //*tamanoLista = i;
 
@@ -246,45 +256,66 @@ void read_data_from_file(const char *file_path) {
 
 
 
-#define MAX_SIZE 60
-
-void readFile() {
-    Serial.begin(115200);
-
-    if (!SPIFFS.begin()) {
-        Serial.println("Error al montar SPIFFS");
-        return;
-    }
-
-    File archivo = SPIFFS.open("/datos.txt", "r");
-
-    if (!archivo) {
-        Serial.println("Error al abrir el archivo");
-        return;
-    }
-
-    float lista[MAX_SIZE];
-    int i = 0;
-
-    while (archivo.available() && i < MAX_SIZE) {
-        // Lee el próximo valor como una cadena
-        String valorStr = archivo.readStringUntil('\n');
-
-        // Convierte la cadena a un valor flotante
-        if (valorStr.equals("nan")) {
-            Serial.println("Se encontró un valor 'nan' en el archivo.");
-        } else {
-            lista[i] = valorStr.toFloat();
-            i++;
+// Dimeniones
+float completitud(float *data, int size) {
+    int datos_esperados = size;
+    int datos_validos = 0;
+    for (int i = 0; i < size; i++) {
+        if (!isnan(*(data + i))) {
+            datos_validos++;
+            // Dato presente
+#ifdef DEBUG
+            printf("Data[%d] = %.4f\n", i,*(data + i));
+#endif
         }
-        
+#ifdef DEBUG
+        else {
+            // Dato no disponible
+            printf("Data[%d] = nan\n", i);
+        }
+#endif
     }
+    return (float) datos_validos / datos_esperados;
+}
 
-    archivo.close();
-
-    // Imprime los valores con 5 cifras decimales
-    for (int j = 0; j < i; j++) {
-        Serial.printf("%.5f\n", lista[j]);
-        delay(1000);
+float incertidumbre(float *data1,float *data2, int size) {
+    float error = 0, d1, d2;
+    float avg = 0;
+    float v;
+    float max;
+    for (int i = 0; i < size; i++) {
+        // Data 1
+        if(isnan(*(data1 + i))) {
+            d1 = 0;
+        }
+        else {
+            d1 = *(data1 + i);
+        }
+        // Data 2
+        if(isnan(*(data2 + i))) {
+            d2 = 0;
+        }
+        else {
+            d2 = *(data2 + i);
+        }
+        error += (d1 - d2)*(d1 - d2);
+        avg += (d1 + d2);
+#ifdef DEBUG
+    printf("%10.5f - %10.5f --- %10.5f --- %10.5f\n", d1, d2, (d1 - d2)*(d1 - d2), (d1 + d2));
+#endif
     }
+    avg /= 2*size;
+    v = sqrt(error/(2*size*avg*avg));
+#ifdef DEBUG
+    printf("------------------------------------------------------\n");
+    printf("Error =  %.5f; Promedio =  %.5f\n", error, avg);
+    printf("v = %.5f\n",v);
+#endif
+    if (0 >= 1 - v) {
+        max = 0;
+    }
+    else {
+        max = 1-v;
+    }
+    return max;
 }

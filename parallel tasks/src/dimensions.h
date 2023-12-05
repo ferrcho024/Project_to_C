@@ -3,15 +3,13 @@
 //
 #include <math.h>
 #include <stdio.h>
-#include "dimensiones.h"
 
-// Importante mirar para cuando se saquen los datos
-float completitud(float *data, int size) {
-    int datos_esperados = size;
-    int datos_validos = 0;
+float completeness(float *data, int size) {
+    int expectedValues = size;
+    int validValues = 0;
     for (int i = 0; i < size; i++) {
         if (!isnan(*(data + i))) {
-            datos_validos++;
+            validValues++;
             // Dato presente
 #ifdef DEBUG
             printf("Data[%d] = %.4f\n", i,*(data + i));
@@ -24,10 +22,10 @@ float completitud(float *data, int size) {
         }
 #endif
     }
-    return (float) datos_validos / datos_esperados;
+    return (float) validValues / expectedValues;
 }
 
-float incertidumbre(float *data1,float *data2, int size) {
+float uncertainty(float *data1,float *data2, int size) {
     float error = 0, d1, d2;
     float avg = 0;
     float v;

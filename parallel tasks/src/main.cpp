@@ -1,9 +1,10 @@
-#include "functions.h"
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
 #include "parameters.h"
+#include "file_func.h"
+#include "dimensions.h"
 
 int listSize;  // Tamaño de la lista que almacena los values
 int startline; // Inicializa la lectura desde la línea 0

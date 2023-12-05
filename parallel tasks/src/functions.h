@@ -19,6 +19,7 @@
 #include "esp_sntp.h"
 #include "WiFiConfig.h" // My WiFi configuration.
 
+
 void printTime(){
   
   struct tm time;
@@ -105,31 +106,31 @@ void initialize_spiffs() {
 
     esp_err_t ret = esp_vfs_spiffs_register(&conf);
     if (ret != ESP_OK) {
-        printf("Error al montar SPIFFS (%d)\n", ret);
+        printf("SPIFFS mount error (%d)\n", ret);
         return;
     }
 }
 
-void crear_Archivo(const char *nombreArchivo) {
+void create_file(const char *file_path) {
     
-    // Intentar abrir el archivo
-    FILE *file = fopen(nombreArchivo, "r");
+    // Intentar abrir el file
+    FILE *file = fopen(file_path, "r");
     if (file != NULL) {
-        // El archivo existe, cerrarlo y eliminarlo
+        // El file existe, cerrarlo y eliminarlo
         fclose(file);
-        if (remove(nombreArchivo) == 0) {
-            printf("Archivo existente eliminado: %s\n", nombreArchivo);
+        if (remove(file_path) == 0) {
+            printf("Existing file deleted: %s\n", file_path);
         } else {
-            printf("Error al eliminar el archivo existente: %s\n", nombreArchivo);
+            printf("Error deleting the existing file: %s\n", file_path);
         }
     } else {
-        printf("El archivo no existe\n");
+        printf("File does not exist\n");
     }
 
-    // Crear el archivo
-    file = fopen(nombreArchivo, "w");
+    // Crear el file
+    file = fopen(file_path, "w");
     if (file == NULL) {
-        printf("Error al crear el archivo\n");
+        printf("Error creating the file\n");
         return;
     }
 
@@ -137,10 +138,10 @@ void crear_Archivo(const char *nombreArchivo) {
 
 }
 
-void write_data_to_file(const char* nombreArchivo, float valor) {
-    FILE *file = fopen(nombreArchivo, "a");
+void write_data_to_file(const char* file_path, float value) {
+    FILE *file = fopen(file_path, "a");
     if (file == NULL) {
-        printf("Error al abrir el archivo para escritura\n");
+        printf("Error opening the file for writing\n");
         return;
     }
 
@@ -149,62 +150,62 @@ void write_data_to_file(const char* nombreArchivo, float valor) {
 
     fprintf(file, "[%04d-%02d-%02d %02d:%02d:%02d] %.5f\n",
                 timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
-                timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, valor);
+                timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, value);
 
     fclose(file);
 
-    // Almacenamiento en el archivo temporal. En este se guarda solo el dato sin fecha para facilidad en la extraccion de los datos para los cálculos
+    // Almacenamiento en el file temporal. En este se guarda solo el dato sin fecha para facilidad en la extraccion de los datos para los cálculos
     FILE *file2 = fopen("/spiffs/temp.txt", "a");
     if (file2 == NULL) {
-        printf("Error al abrir el archivo para escritura\n");
+        printf("Error opening the file for writing\n");
         return;
     }
 
-    fprintf(file2, "%.5f\n", valor);
+    fprintf(file2, "%.5f\n", value);
 
     fclose(file2);
 
 }
 
-float* leerArchivoSPIFFS(const char* nombreArchivo, int lineaInicio, int *tamanoLista) {
-    FILE* archivo = fopen(nombreArchivo, "r");
+float* read_file(const char* file_path, int startLine, int *listSize) {
+    FILE* file = fopen(file_path, "r");
 
-    if (archivo == NULL) {
-        perror("Error al abrir el archivo");
+    if (file == NULL) {
+        perror("Error al abrir el file");
         return NULL;
     }
 
-    float* lista = (float*)malloc(*tamanoLista * sizeof(float));
-    if (lista == NULL) {
-        perror("Error al asignar memoria para la lista");
-        fclose(archivo);
+    float* values = (float*)malloc(*listSize * sizeof(float));
+    if (values == NULL) {
+        perror("Error allocating memory for the list");
+        fclose(file);
         return NULL;
     }
 
     int i = 0;
-    int contadorLineas = 0; 
-    char linea[256]; // Número de caracteres que desea leer de cada linea, Ajusta el tamaño según tus necesidades
+    int linesCounter = 0; 
+    char line[256]; // Número de caracteres que desea leer de cada linea, Ajusta el tamaño según tus necesidades
     
-    while (fgets(linea, sizeof(linea), archivo) != NULL && i < *tamanoLista) {
-        if (contadorLineas >= lineaInicio) {
+    while (fgets(line, sizeof(line), file) != NULL && i < *listSize) {
+        if (linesCounter >= startLine) {
 
-            if (strcmp(linea, "nan\n") == 0) {
-                lista[i] = NAN;  // Representación de NaN en C
+            if (strcmp(line, "nan\n") == 0) {
+                values[i] = NAN;  // Representación de NaN en C
             } else {
-                sscanf(linea, "%f", &lista[i]);
+                sscanf(line, "%f", &values[i]);
             }
 
             i++;
         }
-        contadorLineas++;
+        linesCounter++;
     }
 
-    *tamanoLista = contadorLineas - lineaInicio;
+    *listSize = linesCounter - startLine;
     
-    fclose(archivo);
-    //*tamanoLista = i;
+    fclose(file);
+    //*listSize = i;
 
-    return lista;
+    return values;
 }
 
 struct DataEntry {
@@ -219,11 +220,11 @@ int parse_date_time(const char *str, struct tm *timeinfo) {
                   &timeinfo->tm_hour, &timeinfo->tm_min, &timeinfo->tm_sec);
 }
 
-// Función para leer el archivo y obtener los datos
+// Función para leer el file y obtener los datos
 void read_data_from_file(const char *file_path) {
     FILE *file = fopen(file_path, "r");
     if (file == NULL) {
-        printf("Error al abrir el archivo para lectura\n");
+        printf("Error al abrir el file para lectura\n");
         return;
     }
 
@@ -257,12 +258,12 @@ void read_data_from_file(const char *file_path) {
 
 
 // Dimeniones
-float completitud(float *data, int size) {
-    int datos_esperados = size;
-    int datos_validos = 0;
+float completeness(float *data, int size) {
+    int expectedValues = size;
+    int validValues = 0;
     for (int i = 0; i < size; i++) {
         if (!isnan(*(data + i))) {
-            datos_validos++;
+            validValues++;
             // Dato presente
 #ifdef DEBUG
             printf("Data[%d] = %.4f\n", i,*(data + i));
@@ -275,10 +276,10 @@ float completitud(float *data, int size) {
         }
 #endif
     }
-    return (float) datos_validos / datos_esperados;
+    return (float) validValues / expectedValues;
 }
 
-float incertidumbre(float *data1,float *data2, int size) {
+float uncertainty(float *data1,float *data2, int size) {
     float error = 0, d1, d2;
     float avg = 0;
     float v;

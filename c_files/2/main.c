@@ -13,10 +13,14 @@ int main() {
     float p_compl;
     //test_archivos();
     //test_completitud();
+    test_incertidumbre();
+    /*
+    // Test leer archivo y calcular completitud
     data = leer_Archivo("cache_data1.txt",0,10);
     p_compl = completitud(data,10);
     printf("Porcentaje completitud: %.5f", p_compl);
     free(data);
+     */
     return 0;
 }
 

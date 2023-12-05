@@ -32,3 +32,15 @@ void test_completitud(void) {
     float p_com = completitud(data, 10);
     printf("Porcentaje completitud: %.5f", p_com);
 }
+
+void test_incertidumbre(void) {
+    float data_s1[] = {NAN,28.23421,NAN,NAN, 33.00758,
+                       35.39427,33.00758, 33.00758,30.62090,29.42755};
+    float data_s2[] = {27.04086, 29.42755, 29.42755, 25.84752, 28.23421,
+                       28.23421, 28.23421, 29.42755, 29.42755,29.42755};
+    float data_s3[] = {NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN};
+    float m = incertidumbre(data_s1, data_s2, 10);
+    printf("m = %.5f\n", m);
+    m = incertidumbre(data_s1, data_s3, 10);
+    printf("m = %.5f\n", m);
+}

@@ -7,6 +7,6 @@
 
 void test_archivos(void);
 void test_completitud(void);
-
+void test_incertidumbre(void);
 
 #endif //ENSAYOS_C2_TEST_H

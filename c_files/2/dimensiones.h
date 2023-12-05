@@ -7,5 +7,7 @@
 
 //#define DEBUG 1
 float completitud(float *data, int size);
+float incertidumbre(float *data1,float *data2, int size);
+
 
 #endif //ENSAYOS_C2_DIMENSIONES_H

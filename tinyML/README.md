@@ -1,6 +1,6 @@
 # TinyML
 
-## Herramientas necesarias
+## Herramientas necesarias en el PC
 
 Si no se tiene Linux, MAC o WSL es necesario descargar las siguientes aplicaciones para Windows:
 1. Git (https://git-scm.com/downloads)
@@ -27,4 +27,15 @@ g++ --version
 gdb --version
 make --version
 ```
+
+## Sobre los Notebooks de python
+
+Lo ideal es que esto se haga en [colab](https://colab.google/) y no localmente.
+
+## Proceso
+
+Como punto de partida se siguen los ejemplos realizados en el libro **TinyML** ([link](https://tinymlbook.com/)), cuyos archivos originales esta en el repo: https://github.com/tensorflow/tensorflow/tree/be4f6874533d78f662d9777b66abe3cdde98f901/tensorflow/lite/experimental/micro/examples, sin embargo, la ultima versión esta en el repo: https://github.com/tensorflow/tflite-micro
+
+
+
 

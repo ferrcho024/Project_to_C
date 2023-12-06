@@ -1,4 +1,4 @@
-nan
+nan 
 26.53922
 nan
 nan

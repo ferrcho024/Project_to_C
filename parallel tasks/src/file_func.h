@@ -59,7 +59,7 @@ void create_file(const char *file_path) {
 
 }
 
-void write_data_to_file(const char* file_path, float value) {
+void write_data_to_file(const char* file_path, float value_df, float value_nova) {
     FILE *file = fopen(file_path, "a");
     if (file == NULL) {
         printf("Error opening the file for writing\n");
@@ -69,22 +69,50 @@ void write_data_to_file(const char* file_path, float value) {
     // Obtener la fecha y hora actual
     struct tm timeinfo = get_current_time();
 
-    fprintf(file, "[%04d-%02d-%02d %02d:%02d:%02d] %.5f\n",
+    fprintf(file, "[%04d-%02d-%02d %02d:%02d:%02d],%.5f,%.5f\n",
                 timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
-                timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, value);
+                timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, value_df, value_nova);
 
     fclose(file);
 
+    //printf("DF: %.5f, ** NOVA: %.5f\n", value_df, value_nova);
+
     // Almacenamiento en el file temporal. En este se guarda solo el dato sin fecha para facilidad en la extraccion de los datos para los cálculos
-    FILE *file2 = fopen("/spiffs/temp.txt", "a");
+    FILE *file2 = fopen("/spiffs/temp_df.txt", "a");
     if (file2 == NULL) {
         printf("Error opening the file for writing\n");
         return;
     }
 
-    fprintf(file2, "%.5f\n", value);
+    fprintf(file2, "%.5f\n", value_df);
 
     fclose(file2);
+
+    FILE *file3 = fopen("/spiffs/temp_nova.txt", "a");
+    if (file3 == NULL) {
+        printf("Error opening the file for writing\n");
+        return;
+    }
+
+    fprintf(file3, "%.5f\n", value_nova);
+
+    fclose(file3);
+
+}
+
+void write_text_to_file(const char* file_path, const char* text) {
+    FILE *file = fopen(file_path, "a");
+    if (file == NULL) {
+        printf("Error opening the file for writing\n");
+        return;
+    }
+
+    // Obtener la fecha y hora actual
+    struct tm timeinfo = get_current_time();
+
+    fprintf(file, "[%02d],%s,\n", timeinfo.tm_hour, text);
+
+    fclose(file);
 
 }
 
@@ -92,7 +120,7 @@ float* read_file(const char* file_path, int startLine, int *listSize) {
     FILE* file = fopen(file_path, "r");
 
     if (file == NULL) {
-        perror("Error al abrir el file");
+        perror("Error opening the file");
         return NULL;
     }
 
@@ -106,7 +134,7 @@ float* read_file(const char* file_path, int startLine, int *listSize) {
     int i = 0;
     int linesCounter = 0; 
     char line[256]; // Número de caracteres que desea leer de cada linea, Ajusta el tamaño según tus necesidades
-    
+    //printf("Valor de startLines %d\n", startLine);
     while (fgets(line, sizeof(line), file) != NULL && i < *listSize) {
         if (linesCounter >= startLine) {
 
@@ -145,7 +173,7 @@ int parse_date_time(const char *str, struct tm *timeinfo) {
 void read_data_from_file(const char *file_path) {
     FILE *file = fopen(file_path, "r");
     if (file == NULL) {
-        printf("Error al abrir el file para lectura\n");
+        printf("Error opening file for reading\n");
         return;
     }
 
@@ -166,10 +194,10 @@ void read_data_from_file(const char *file_path) {
                        entry.timeinfo.tm_hour, entry.timeinfo.tm_min, entry.timeinfo.tm_sec,
                        entry.value);
             } else {
-                printf("Error al extraer el valor float de la línea: %s\n", line);
+                printf("Error extracting float value from line: %s\n", line);
             }
         } else {
-            printf("Error al parsear la línea: %s\n", line);
+            printf("Error parsing the line: %s\n", line);
         }
     }
 

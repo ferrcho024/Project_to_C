@@ -213,7 +213,7 @@ Como la libreria que se necesitaba viejita que es la del libro y la del tutorial
    const int kInferencesPerCycle = 2000;
    ```
 
-    Si aumenta la variacion de la ilumacion se hace mas lenta. Para otros ensayos adicionales solo basta con seguir el tutorial.
+   Si aumenta la variacion de la ilumacion se hace mas lenta. Para otros ensayos adicionales solo basta con seguir el tutorial.
 
 
 

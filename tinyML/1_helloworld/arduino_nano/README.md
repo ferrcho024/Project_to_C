@@ -189,9 +189,31 @@ Codigos:
 * Codigo del libro: https://github.com/tensorflow/tensorflow/tree/be4f6874533d78f662d9777b66abe3cdde98f901/tensorflow/lite/experimental/micro/examples/hello_world/arduino
 * Codigo actual: 
 
-La explicación se encuentra tambien en: https://www.digikey.com/en/maker/projects/intro-to-tinyml-part-1-training-a-model-for-arduino-in-tensorflow/8f1fc8c0b83d417ab521c48864d2a8ec, mejor dicho creo que para empezar la derecha es seguir este tutorial.
+La explicación se encuentra tambien en: 
+1. **Intro to TinyML Part 1: Training a Model for Arduino in TensorFlow** [[link]](https://www.digikey.com/en/maker/projects/intro-to-tinyml-part-1-training-a-model-for-arduino-in-tensorflow/8f1fc8c0b83d417ab521c48864d2a8ec)
+2. **Intro to TinyML Part 2: Deploying a TensorFlow Lite Model to Arduino** [[link]](https://www.digikey.com/en/maker/projects/intro-to-tinyml-part-2-deploying-a-tensorflow-lite-model-to-arduino/59bf2d67256f4b40900a3fa670c14330)
+
+Mejor dicho creo que para empezar la derecha es seguir este tutorial.
 
 Para ver la forma de la red, puede cargar el modelo comprimido en: https://netron.app/
+
+Como la libreria que se necesitaba viejita que es la del libro y la del tutorial
+
+#### Actividades
+
+1. Del libro:
+   
+   > We can vary the number of inferences we perform across a full sine wave cycle using
+   the ```kInferencesPerCycle``` constant. Because one inference takes a set amount of
+   time, tweaking ```kInferencesPerCycle```, defined in constants.cc, will adjust how fast the
+   LED fades:
+
+   ```cpp
+   // Se cambio a 2000
+   const int kInferencesPerCycle = 2000;
+   ```
+
+    Si aumenta la variacion de la ilumacion se hace mas lenta. Para otros ensayos adicionales solo basta con seguir el tutorial.
 
 
 

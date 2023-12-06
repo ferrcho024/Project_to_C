@@ -59,7 +59,7 @@ void task1(void *parameter) {
 }
 
 void task2(void *parameter) {
-  float dimen[24][8];
+  float dimen[24][10];
   while (true) {
     //printf("Tarea 2 ejecutándose en el núcleo 1 %d\n", ban);
     delay(frec/2);
@@ -79,8 +79,8 @@ void task2(void *parameter) {
       float p_com_nova = completeness(values_nova, listSize);
       printf("********** Completeness NOVA: %.5f\n", p_com_nova);
 
-      float m = uncertainty(values_df, values_nova, listSize);
-      printf("********** Uncertainty: %.5f\n", m);
+      float uncer = uncertainty(values_df, values_nova, listSize);
+      printf("********** Uncertainty: %.5f\n", uncer);
 
       float p_df = precision(values_df, listSize);
       printf("********** Precision DF: %.5f\n", p_df);
@@ -96,11 +96,23 @@ void task2(void *parameter) {
       float a_nova = accuracy(values_nova, value_siata[0], listSize);
       printf("********** Accuracy NOVA: %.5f\n", a_nova);
 
-      float c = PearsonCorrelation(values_df, values_nova, listSize);
-      printf("********** Concordance: %.5f\n", c);
+      float concor = PearsonCorrelation(values_df, values_nova, listSize);
+      printf("********** Concordance: %.5f\n", concor);
+
+      float* valuesFusioned = plausability(p_com_df, p_com_nova, p_df, p_nova, a_df, a_nova, values_df, values_nova, listSize);
+      float fusion = calculateMean(valuesFusioned, listSize);
+      printf("********** Value Fusioned: %.5f\n", fusion);
+
+      float DQIndex = DQ_Index(valuesFusioned, uncer, concor, value_siata[0], listSize);
+      printf("********** DQ Index: %.5f\n", DQIndex);
+
+      free(valuesFusioned);
+      free(values_df);
+      free(values_nova);
+      free(value_siata);
 
       char resultString[50];
-      sprintf(resultString, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f",p_com_df,p_com_nova,p_df,p_nova,a_df,a_nova,m,c);
+      sprintf(resultString, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f",p_com_df,p_com_nova,p_df,p_nova,a_df,a_nova,uncer,concor,fusion,DQIndex);
       write_text_to_file(dimensions, resultString);
       dimen[siataValue%24][0] = p_com_df;
       dimen[siataValue%24][1] = p_com_nova;
@@ -108,8 +120,10 @@ void task2(void *parameter) {
       dimen[siataValue%24][3] = p_nova;
       dimen[siataValue%24][4] = a_df;
       dimen[siataValue%24][5] = a_nova;
-      dimen[siataValue%24][6] = m;
-      dimen[siataValue%24][7] = c;
+      dimen[siataValue%24][6] = uncer;
+      dimen[siataValue%24][7] = concor;
+      dimen[siataValue%24][8] = fusion;
+      dimen[siataValue%24][9] = DQIndex;
 
       //read_data_from_file("/spiffs/data.txt"); // Lee el archivo con formato de hora y valor float
     }

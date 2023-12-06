@@ -125,19 +125,21 @@ float accuracy(float *data1, float data2, int size) {
     float avg = 0;
     float v;
     float max;
-    for (int i = 0; i < size; i++) {
-        // Data 1
-        if(isnan(*(data1 + i))) {
-            d1 = 0;
-        }
-        else {
-            d1 = *(data1 + i);
-        }
-        avg += d1;
 
-    }
+    avg = calculateMean(data1, size);
+    // for (int i = 0; i < size; i++) {
+    //     // Data 1
+    //     if(isnan(*(data1 + i))) {
+    //         d1 = 0;
+    //     }
+    //     else {
+    //         d1 = *(data1 + i);
+    //     }
+    //     avg += d1;
 
-    avg /= size;
+    // }
+
+    // avg /= size;
 
     v = fabs(avg - data2)/data2;
 
@@ -184,3 +186,67 @@ float PearsonCorrelation(float *list1, float *list2, int size) {
 
     return numerator / sqrt(denominator1 * denominator2);
 }
+
+float* plausability(float p_com_df, float p_com_nova, float p_df, float p_nova, float a_df, float a_nova, float *data1, float *data2, int size){
+    float sum_df = 0, sum_nova;
+
+    if (p_com_df > 0.75){
+        sum_df += (p_com_df - 0.75)/(1 - 0.75);
+    }else{
+        sum_df += 0;
+    }
+
+    if (p_com_nova > 0.75){
+        sum_nova += (p_com_nova - 0.75)/(1 - 0.75);
+    }else{
+        sum_nova += 0;
+    }
+
+    if (p_df > 0.9){
+        sum_df += (p_df - 0.9)/(1 - 0.9);
+    }else{
+        sum_df += 0;
+    }
+
+    if (p_nova > 0.9){
+        sum_nova += (p_nova - 0.9)/(1 - 0.9);
+    }else{
+        sum_nova += 0;
+    }
+
+    if (a_df > 0.9){
+        sum_df += (a_df - 0.9)/(1 - 0.9);
+    }else{
+        sum_df += 0;
+    }
+
+    if (a_nova > 0.9){
+        sum_nova += (a_nova - 0.9)/(1 - 0.9);
+    }else{
+        sum_nova += 0;
+    }
+
+    float a = sum_df/(sum_df + sum_nova);
+    float b = 1 - a;
+
+    float* fusioned = (float*)malloc(size * sizeof(float));
+    
+    for (int i = 0; i < size; i++) {
+        fusioned[i] = (data1[i] * a) + (data2[i] * b);
+    }
+
+    return fusioned; 
+
+}
+
+float DQ_Index(float *data, float uncer, float concor, float ref, int listSize){
+
+
+    float comp = completeness(data, listSize);
+    float prec = precision(data, listSize);
+    float acc = accuracy(data, ref, listSize);
+
+    
+    return (0.4*acc) + (0.08*prec) + (0.18*uncer) + (0.16*comp) + (0.18*concor);
+}
+

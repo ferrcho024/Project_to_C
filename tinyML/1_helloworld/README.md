@@ -135,3 +135,7 @@ Salio lo siguiente:
 ```
 make -f tensorflow/lite/experimental/micro/tools/make/Makefile hello_world   
 ```
+
+Al final dió segmentation fault, de modo que nos quedamos con ganas de probar en el PC.
+
+

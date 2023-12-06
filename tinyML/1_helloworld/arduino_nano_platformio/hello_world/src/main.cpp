@@ -1,15 +1,30 @@
 #include <Arduino.h>
 
-#include <TensorFlowLite.h>
+/* Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+#include <Wire.h>
+#include <TensorFlowLite.h>
+ 
 #include "main_functions.h"
 
+#include "tensorflow/lite/micro/all_ops_resolver.h"
 #include "constants.h"
+#include "model.h"
 #include "output_handler.h"
-#include "sine_model_data.h"
-#include "tensorflow/lite/experimental/micro/kernels/all_ops_resolver.h"
-#include "tensorflow/lite/experimental/micro/micro_error_reporter.h"
-#include "tensorflow/lite/experimental/micro/micro_interpreter.h"
+#include "tensorflow/lite/micro/micro_error_reporter.h"
+#include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 #include "tensorflow/lite/version.h"
 
@@ -22,9 +37,7 @@ TfLiteTensor* input = nullptr;
 TfLiteTensor* output = nullptr;
 int inference_count = 0;
 
-// Create an area of memory to use for input, output, and intermediate arrays.
-// Finding the minimum value for your model may require some trial and error.
-constexpr int kTensorArenaSize = 2 * 1024;
+constexpr int kTensorArenaSize = 2000;
 uint8_t tensor_arena[kTensorArenaSize];
 }  // namespace
 
@@ -38,18 +51,18 @@ void setup() {
 
   // Map the model into a usable data structure. This doesn't involve any
   // copying or parsing, it's a very lightweight operation.
-  model = tflite::GetModel(g_sine_model_data);
+  model = tflite::GetModel(g_model);
   if (model->version() != TFLITE_SCHEMA_VERSION) {
-    error_reporter->Report(
-        "Model provided is schema version %d not equal "
-        "to supported version %d.",
-        model->version(), TFLITE_SCHEMA_VERSION);
+    TF_LITE_REPORT_ERROR(error_reporter,
+                         "Model provided is schema version %d not equal "
+                         "to supported version %d.",
+                         model->version(), TFLITE_SCHEMA_VERSION);
     return;
   }
 
   // This pulls in all the operation implementations we need.
   // NOLINTNEXTLINE(runtime-global-variables)
-  static tflite::ops::micro::AllOpsResolver resolver;
+  static tflite::AllOpsResolver resolver;
 
   // Build an interpreter to run the model with.
   static tflite::MicroInterpreter static_interpreter(
@@ -59,7 +72,7 @@ void setup() {
   // Allocate memory from the tensor_arena for the model's tensors.
   TfLiteStatus allocate_status = interpreter->AllocateTensors();
   if (allocate_status != kTfLiteOk) {
-    error_reporter->Report("AllocateTensors() failed");
+    TF_LITE_REPORT_ERROR(error_reporter, "AllocateTensors() failed");
     return;
   }
 
@@ -79,25 +92,29 @@ void loop() {
   // trained on, and use this to calculate a value.
   float position = static_cast<float>(inference_count) /
                    static_cast<float>(kInferencesPerCycle);
-  float x_val = position * kXrange;
+  float x = position * kXrange;
 
-  // Place our calculated x value in the model's input tensor
-  input->data.f[0] = x_val;
+  // Quantize the input from floating-point to integer
+  int8_t x_quantized = x / input->params.scale + input->params.zero_point;
+  // Place the quantized input in the model's input tensor
+  input->data.int8[0] = x_quantized;
 
   // Run inference, and report any error
   TfLiteStatus invoke_status = interpreter->Invoke();
   if (invoke_status != kTfLiteOk) {
-    error_reporter->Report("Invoke failed on x_val: %f\n",
-                           static_cast<double>(x_val));
+    TF_LITE_REPORT_ERROR(error_reporter, "Invoke failed on x: %f\n",
+                         static_cast<double>(x));
     return;
   }
 
-  // Read the predicted y value from the model's output tensor
-  float y_val = output->data.f[0];
+  // Obtain the quantized output from model's output tensor
+  int8_t y_quantized = output->data.int8[0];
+  // Dequantize the output from integer to floating-point
+  float y = (y_quantized - output->params.zero_point) * output->params.scale;
 
   // Output the results. A custom HandleOutput function can be implemented
   // for each supported hardware target.
-  HandleOutput(error_reporter, x_val, y_val);
+  HandleOutput(error_reporter, x, y);
 
   // Increment the inference_counter, and reset it if we have reached
   // the total number per cycle

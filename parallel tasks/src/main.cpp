@@ -76,7 +76,7 @@ void task2(void *parameter) {
       // Extraer el token antes de la coma
       String token = in_txt.substring(0, comaPos);
 
-      if (token != "1"){
+      if (token != ID){
         Serial.println(in_txt);
       }
 

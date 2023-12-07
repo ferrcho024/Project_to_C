@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include "freertos/queue.h"
 
 
 #include "parameters.h"
@@ -18,13 +19,19 @@ int siataValue; // Contador para extraer el valor de la estación SIATA
 bool ban = true;
 int frec = 1000; // Espacio de tiempo entre los values que llegan (en milisegundos)
 
+// Declaración de una cola
+//QueueHandle_t queue_df;
+//QueueHandle_t queue_nova;
+
 void task1(void *parameter) {
 
   startline = 0;
   siataValue = -1;
   while(true){
+    
     delay(frec/2);
     if (ban){
+      printf("************ Free Memory task 1: %u bytes\n", esp_get_free_heap_size());
 
       listSize = 60;
       
@@ -44,6 +51,10 @@ void task1(void *parameter) {
                 write_data_to_file(data, myList_df[i], myList_nova[i]);
                 //delay(frec);
             }
+
+            // Enviar la variable a la cola
+            //xQueueSend(queue_df, &myList_df, portMAX_DELAY);
+            //xQueueSend(queue_nova, &myList_nova, portMAX_DELAY);
 
             // Liberar memoria después de su uso
             free(myList_df);
@@ -67,6 +78,7 @@ void task1(void *parameter) {
 void task2(void *parameter) {
   float dimen[24][10];
   while (true) {
+    
     //printf("Tarea 2 ejecutándose en el núcleo 1 %d\n", ban);
     delay(frec/2);
     if (callback){
@@ -84,11 +96,20 @@ void task2(void *parameter) {
     }
 
     if (!ban){
+      printf("************ Free Memory task 2: %u bytes\n", esp_get_free_heap_size());
+      //float* values_df;
+      //float* values_nova;
+
+      // Recibir la variable desde la cola
+      //xQueueReceive(queue_df, &values_df, portMAX_DELAY);
+      //xQueueReceive(queue_nova, &values_nova, portMAX_DELAY);
+
       float* values_df = read_file(temp_df, 0, &listSize); // Lee el archivo solo con valores
       float* values_nova = read_file(temp_nova, 0, &listSize); // Lee el archivo solo con valores
 
       create_file(temp_df);
       create_file(temp_nova);
+      
       //Serial.println("Tarea 2 ejecutándose en el núcleo 1");
       //delay(frec);
       ban = true;
@@ -126,6 +147,11 @@ void task2(void *parameter) {
       float DQIndex = DQ_Index(valuesFusioned, uncer, concor, value_siata[0], listSize);
       printf("********** DQ Index: %.5f\n", DQIndex);
 
+      free(valuesFusioned);
+      free(values_df);
+      free(values_nova);
+      free(value_siata);
+
       char mqtt_msg[50];
       sprintf(mqtt_msg, "%s,%.5f,distancia,%.5f",ID,fusion,DQIndex);
       client.publish(TOPIC.c_str(), mqtt_msg);
@@ -144,11 +170,6 @@ void task2(void *parameter) {
       dimen[siataValue%24][8] = fusion;
       dimen[siataValue%24][9] = DQIndex;
 
-      free(valuesFusioned);
-      free(values_df);
-      free(values_nova);
-      free(value_siata);
-
       //read_data_from_file("/spiffs/data.txt"); // Lee el archivo con formato de hora y valor float
     }
   }
@@ -156,6 +177,10 @@ void task2(void *parameter) {
 
 void setup() {
   Serial.begin(115200);
+
+  // Crear la cola
+  //queue_df = xQueueCreate(1, sizeof(float[60]));
+  //queue_nova = xQueueCreate(1, sizeof(float[60]));
 
   // Configurar y conectar WiFi
   ConnectToWiFi();
@@ -166,11 +191,15 @@ void setup() {
   create_file(data); // Archivo de memoria permanente 
   create_file(dimensions); // Archivo que almacena las métricas cada hora 
   write_text_to_file(dimensions, "hora,comp_df,comp_nova,prec_df,prec_nova,acc_df,acc_nova,uncer,concor");
+  write_text_to_file(data, "fechaHora,pm25df,pm25nova");
   createMQTTClient();
 
   // Crea dos tareas y las asigna a diferentes núcleos
   xTaskCreatePinnedToCore(task1, "Task1", 10000, NULL, 1, NULL, 0);
   xTaskCreatePinnedToCore(task2, "Task2", 10000, NULL, 1, NULL, 1);
+
+  // Iniciar el planificador de tareas
+  //vTaskStartScheduler();
 }
 
 void loop() {

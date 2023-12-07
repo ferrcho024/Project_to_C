@@ -2,9 +2,15 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+
 #include "parameters.h"
 #include "file_func.h"
 #include "dimensions.h"
+#include "mqtt.h"
+
+extern PubSubClient client;
+extern String in_txt;
+extern bool callback;
 
 int listSize;  // Tamaño de la lista que almacena los values
 int startline; // Inicializa la lectura desde la línea 0
@@ -63,6 +69,20 @@ void task2(void *parameter) {
   while (true) {
     //printf("Tarea 2 ejecutándose en el núcleo 1 %d\n", ban);
     delay(frec/2);
+    if (callback){
+      // Encontrar la posición de la primera coma
+      int comaPos = in_txt.indexOf(',');
+
+      // Extraer el token antes de la coma
+      String token = in_txt.substring(0, comaPos);
+
+      if (token != "1"){
+        Serial.println(in_txt);
+      }
+
+      callback = false;
+    }
+
     if (!ban){
       float* values_df = read_file(temp_df, 0, &listSize); // Lee el archivo solo con valores
       float* values_nova = read_file(temp_nova, 0, &listSize); // Lee el archivo solo con valores
@@ -106,10 +126,9 @@ void task2(void *parameter) {
       float DQIndex = DQ_Index(valuesFusioned, uncer, concor, value_siata[0], listSize);
       printf("********** DQ Index: %.5f\n", DQIndex);
 
-      free(valuesFusioned);
-      free(values_df);
-      free(values_nova);
-      free(value_siata);
+      char mqtt_msg[50];
+      sprintf(mqtt_msg, "%s,%.5f,distancia,%.5f",ID,fusion,DQIndex);
+      client.publish(TOPIC.c_str(), mqtt_msg);
 
       char resultString[50];
       sprintf(resultString, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f",p_com_df,p_com_nova,p_df,p_nova,a_df,a_nova,uncer,concor,fusion,DQIndex);
@@ -124,6 +143,11 @@ void task2(void *parameter) {
       dimen[siataValue%24][7] = concor;
       dimen[siataValue%24][8] = fusion;
       dimen[siataValue%24][9] = DQIndex;
+
+      free(valuesFusioned);
+      free(values_df);
+      free(values_nova);
+      free(value_siata);
 
       //read_data_from_file("/spiffs/data.txt"); // Lee el archivo con formato de hora y valor float
     }
@@ -142,6 +166,7 @@ void setup() {
   create_file(data); // Archivo de memoria permanente 
   create_file(dimensions); // Archivo que almacena las métricas cada hora 
   write_text_to_file(dimensions, "hora,comp_df,comp_nova,prec_df,prec_nova,acc_df,acc_nova,uncer,concor");
+  createMQTTClient();
 
   // Crea dos tareas y las asigna a diferentes núcleos
   xTaskCreatePinnedToCore(task1, "Task1", 10000, NULL, 1, NULL, 0);
@@ -149,5 +174,7 @@ void setup() {
 }
 
 void loop() {
-    // Tu código en el bucle principal, si es necesario
+  reconnectMQTTClient();
+  client.loop();
+  delay(1000);
 }

@@ -2,6 +2,7 @@
 #include "io_connections.h"
 
 void setup_ports(void) {
-    pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, LOW);
+    led_pin = LED_PIN; // GPIO2
+    pinMode(led_pin, OUTPUT);
+    digitalWrite(led_pin, LOW);
 }

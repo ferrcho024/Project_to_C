@@ -1,12 +1,7 @@
 #ifndef IO_CONNECTIONS_H
 #define IO_CONNECTIONS_H
-
-/* ----- INPUT/OUTPUT PORTS ----- */
-
-const int LED_PIN = 2;  // GPIO2
-
-
-/* ----- PORTS CONFIGURATION  ----- */
+#include "config.h"
+#include "globals.h"
 
 void setup_ports(void);
 

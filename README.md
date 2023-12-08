@@ -9,3 +9,4 @@ Data Quality Strategy on Arduino NANO device
 * https://gist.github.com/fabrizzio-gz/d2e880615be13489ec3c18d3cae21648
 * https://stackoverflow.com/questions/1433204/how-do-i-use-extern-to-share-variables-between-source-files/1433387#1433387
 * https://www.eskimo.com/~scs/cclass/int/sx9a.html
+* https://www.eskimo.com/~scs/cclass/

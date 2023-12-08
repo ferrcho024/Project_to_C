@@ -1,23 +1,21 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/* ----- Wifi ----- */
-// const char* ssid = "SSID-AP";   // name of your WiFi network
-// const char* password = "PASS_AP"; // password of the WiFi network
-const char* ssid = "Alberto"; 
-const char* password = "22181224";
+#define SERIAL_SPEED 9600
+#define LED_PIN 2
 
+// Wifi
+#define PASSWORD "22181224"
+#define SSID "Alberto"
 
-/* ----- MQTT ----- */
-const char *BROKER = "192.168.1.35"; // IP address of your MQTT 
-const char *ID = "id_thing";  // Name of our device, must be unique
-
-/* ----- SERIAL PORT ----- */
-//const int PORT_SPEED = 9600;
+// MQTT
+#define BROKER "192.168.1.4" // IP address of your MQTT 
+#define ID "id_thing"        // Name of our device, must be unique
+#define MQTT_PORT 1883       // Broker port
 
 // Topics
-const char *topic1 = "test"; 
-//const char *topic2 = "topic2_name";  
+#define TOPIC1 "topic1"
+#define TOPIC2 "topic2"
 
 #endif //CONFIG_H
 

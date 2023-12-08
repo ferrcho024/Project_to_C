@@ -1,0 +1,3 @@
+C:/Users/Usuario/Documents/UdeA/IoT/2023-2/repos/ensayos_C3/cmake-build-debug/CMakeFiles/ensayos_C3.dir
+C:/Users/Usuario/Documents/UdeA/IoT/2023-2/repos/ensayos_C3/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/Usuario/Documents/UdeA/IoT/2023-2/repos/ensayos_C3/cmake-build-debug/CMakeFiles/rebuild_cache.dir
